@@ -1,0 +1,645 @@
+
+⚡
+
+SPARK
+From Spark to Ship
+Full App Development Plan — AI Council Edition
+
+
+
+Version 1.0  |  Target Launch: Month 3  |  Budget: ₹0
+Platforms: iOS & Android  |  Framework: React Native + Expo
+
+0. Executive Summary
+SPARK is an agentic mobile app that captures your ideas and does all the heavy lifting — researching them, breaking them into actionable tasks, and scheduling those tasks into your calendar automatically. It runs background AI agents that work even when the app is closed, pushing a notification when the work is done. Built entirely on free-tier services until revenue justifies cost.
+
+▸ The Core Promise to Users
+"You type your idea. SPARK handles the research, the planning, and the scheduling — then taps your shoulder when it's ready."
+
+Target audience: Students, young professionals, and aspiring founders aged 18–28.
+Primary markets: India (Android-first), then global.
+
+
+1. Product Features (What We Are Building)
+1.1 Core Features — v1 (Must Ship)
+A. Idea Capture
+	•	Text input with long-form support for full idea descriptions
+	•	Voice-to-text input using Expo Speech API (free, on-device)
+	•	Idea saved immediately offline (WatermelonDB) and synced to Supabase when online
+	•	Category tagging: App, Business, Content, Side Project, Research, Other
+B. Research Agent
+	•	Triggered automatically when user submits an idea
+	•	Runs entirely on the server — app does not need to be open
+	•	Generates 5 targeted search queries from the idea text using an LLM
+	•	Executes searches using Tavily Search API (1,000 free calls/month)
+	•	Synthesizes results into structured output:
+	•	Concept summary (2–3 paragraphs)
+	•	Recommended tech stack or tools/resources required
+	•	Step-by-step process (broken into phases)
+	•	Estimated time per phase
+	•	5–8 curated resource links (articles, docs, videos)
+	•	Common mistakes to avoid
+	•	Pushes a notification when research is complete: "Your SPARK for [Idea Name] is ready"
+C. Scheduler Agent
+	•	After the user reviews research and hits "Schedule It", this agent activates
+	•	First asks the user: preferred working days and time windows (e.g., Mon/Wed/Fri, 7–9 PM)
+	•	Reads available calendar slots via OAuth APIs (Google Calendar, Microsoft Calendar)
+	•	Breaks every step into atomic same-day tasks — no task spans two days
+	•	Each task is scoped to 30–90 minutes so it is completable in a single session
+	•	Writes scheduled task events directly to the user's connected calendar
+	•	Event description contains full context: what to do, why, and a link back into SPARK
+	•	Pushes confirmation notification: "14 tasks scheduled. Your first session is Tuesday at 7 PM"
+D. Task Tracking & Rescheduling
+	•	Main "Active Projects" screen shows all in-progress ideas and their task completion %
+	•	Task list view shows all upcoming sessions for an idea in chronological order
+	•	Push notification arrives 30 minutes before each scheduled task session (like an alarm)
+	•	Notification has two action buttons: "I'm on it" (dismiss) and "Reschedule" (inline)
+	•	Rescheduling via notification: opens a bottom sheet to pick a new date/time slot
+	•	Reschedule propagates to connected calendar automatically
+	•	Tasks marked Done from within app or from notification — calendar event updated accordingly
+E. Streak & Momentum Tracker
+	•	GitHub-style heatmap showing daily task completion history
+	•	Current streak count in days (resets if no task completed for 24+ hours)
+	•	Momentum Score: composite of streak + completion rate + idea count — displayed as a number
+	•	"Rescue Notification": if 48 hours pass with no activity, agent finds the smallest task in any active project and pushes: "You have 20 minutes? This one task will keep your streak alive"
+F. Dig-Deeper Agent (On-Demand)
+	•	In any research output, user can tap any section or bullet and ask "Tell me more"
+	•	A focused research agent runs a targeted deep dive on that specific subtopic
+	•	Response streams in real-time — user sees text appearing live (like ChatGPT)
+	•	Follow-up questions supported in a chat thread below the main research
+
+1.2 Phase 2 Features — After Launch
+G. Enhancement Agent (Triggers at 40% Completion)
+	•	When 40% of tasks for any idea are marked Done, this agent runs automatically
+	•	Re-researches the idea with updated context: "What enhancements should this project have?"
+	•	Delivers a push notification: "Your project is taking shape — here are 5 enhancements to consider"
+	•	UI switches from "Idea" to "Project" labelling at this milestone — a deliberate psychological shift
+H. Idea Aging System
+	•	"Dormant" state: idea not scheduled or worked on for 14 days
+	•	Gentle push at Day 14: "This idea is sleeping. Wake it up?"
+	•	"Archived" state at Day 30 with prompt: delete, restart, or share with a friend (referral mechanic)
+I. Idea Collision
+	•	Once user has 3+ dormant ideas, agent surfaces two and asks: "What if these two combined?"
+	•	Generates a hybrid concept brief — a creative prompt to spark new momentum
+J. Vibe Code Ready Export
+	•	One-tap export of a fully structured PRD (Product Requirements Document)
+	•	Includes a Cursor/Bolt/Lovable-ready system prompt to immediately start AI coding
+	•	Exports as Notion page, markdown file, or shared link
+K. Integrations (Phase 2)
+	•	Notion: sync idea research output as a Notion page
+	•	Google Tasks / Microsoft To Do: sync task list into these apps
+	•	Apple Calendar (CalDAV): same scheduling flow as Google/Microsoft
+
+
+
+2. Tech Stack — Full Free-Tier Breakdown
+2.1 Mobile App Layer
+Technology
+Purpose
+Free Tier Limit
+Notes
+React Native + Expo
+Cross-platform iOS + Android app
+Unlimited
+One codebase, both stores
+Expo Router
+File-based navigation
+Unlimited
+No extra setup needed
+WatermelonDB
+Offline-first local database
+Unlimited
+Ideas saved offline instantly
+Expo Speech API
+Voice-to-text for idea capture
+Unlimited (on-device)
+No API cost
+Expo Notifications
+Push notifications (iOS + Android)
+Unlimited
+Handles APNs + FCM
+React Native Reanimated
+Smooth animations and gestures
+Unlimited
+60fps, native thread
+Lottie React Native
+Micro-animations and loading states
+Unlimited
+Free animations on LottieFiles
+
+2.2 Backend & Infrastructure
+Service
+Purpose
+Free Tier Limit
+Supabase
+PostgreSQL DB + Auth + Realtime + Storage
+500MB DB, 50k MAU, 2GB bandwidth/mo
+Cloudflare Workers
+API layer — handles all HTTP requests
+100,000 requests/day free
+Inngest
+Background job queue for agents
+50,000 function runs/month free
+Upstash Redis
+Rate limiting + caching (Phase 2)
+10,000 commands/day free
+
+2.3 AI / LLM Layer
+Service
+Used For
+Cost Model
+OpenRouter
+LLM routing gateway — lets us swap models freely
+Pay per token, no monthly fee
+Gemini 1.5 Flash
+Research synthesis, task breakdown (bulk work)
+~₹0.006 per 1,000 ideas researched
+Claude 3 Haiku
+Scheduling logic, structured JSON outputs
+Cheap, fast, great at structure
+GPT-4o mini
+Fallback for complex synthesis tasks
+Used sparingly, only when needed
+Tavily Search API
+Live web search for research agent
+1,000 free searches/month
+
+▸ Cost Estimate at 1,000 Users
+Assume each user researches 3 ideas/month = 3,000 research runs.
+Each run: ~5 Tavily searches + ~10,000 tokens of LLM work.
+Tavily: 3,000 calls/month → need paid plan at $35/mo (~₹2,900) at this scale.
+LLM (Gemini Flash): 30M tokens → ~$2.25 (~₹185).
+Total AI cost at 1,000 MAU: ~₹3,100/month. Recover this with just 16 Pro subscribers at ₹199/mo.
+
+2.4 Calendar & Integrations
+API
+Integration Type
+Auth Method
+Cost
+Google Calendar API
+Read free/busy + write events
+OAuth 2.0
+Free (1M requests/day)
+Microsoft Graph API
+Read + write Outlook/O365 Calendar
+OAuth 2.0
+Free
+Apple Calendar (CalDAV)
+Read + write via standard protocol
+OAuth / App-Specific Password
+Free
+Notion API
+Write research output as Notion page
+OAuth 2.0
+Free
+Google Tasks API
+Sync task list (Phase 2)
+OAuth 2.0
+Free
+
+2.5 Developer & Deployment Tools
+Tool
+Purpose
+Free Tier
+GitHub
+Code hosting + CI/CD actions
+Unlimited private repos, 2,000 CI mins/mo
+Expo EAS Build
+Build iOS .ipa and Android .apk
+2 builds/month free
+Vercel
+Web dashboard / admin panel (optional)
+100GB bandwidth/mo free
+PostHog
+Product analytics + funnels
+1M events/month free
+Sentry
+Error tracking and crash reports
+5,000 errors/month free
+RevenueCat
+In-app subscription management
+Free up to $2,500 MRR
+Figma
+UI/UX design and prototyping
+Free (3 projects)
+
+
+3. System Architecture
+3.1 High-Level Data Flow
+The entire system is event-driven. Every action in the app fires an event that the backend processes asynchronously. The app never waits for agent work — it submits and gets notified when complete.
+
+▸ Idea Research Flow (Step by Step)
+1. User types idea in app → saved to WatermelonDB instantly (offline safe)
+2. App sends POST to Cloudflare Worker: { userId, ideaId, ideaText }
+3. Worker validates auth (Supabase JWT), inserts idea into Supabase DB, fires Inngest event: "idea.submitted"
+4. Inngest picks up event, runs Research Agent function (server-side):
+     a. LLM call #1: Generate 5 search queries from idea text
+     b. Tavily API: Execute all 5 searches in parallel
+     c. LLM call #2: Synthesize search results into structured JSON (summary, steps, stack, resources)
+     d. Write structured output to Supabase research_results table
+     e. Supabase Realtime broadcasts update → app shows result live if open
+     f. Inngest triggers push notification via Expo Push API
+5. User receives notification. Taps → app opens to full research output.
+
+▸ Scheduling Flow (Step by Step)
+1. User reviews research, taps "Schedule It"
+2. Onboarding sheet: "Which days can you work? What times work best?"
+3. App prompts OAuth consent for Google/Microsoft Calendar (first time only)
+4. App sends POST to Cloudflare Worker with: userId, ideaId, preferences, calendarTokens
+5. Inngest event: "idea.schedule_requested"
+6. Scheduler Agent runs:
+     a. Calls Google/Microsoft Calendar API to read free/busy slots for next 4 weeks
+     b. LLM breaks research steps into atomic same-day tasks (30–90 min each)
+     c. Assigns tasks to available slots respecting user preferences
+     d. Writes events to calendar via API (includes deep-link back to app)
+     e. Saves schedule to Supabase tasks table
+7. Notification: "14 tasks scheduled. First session: Tuesday, 7 PM"
+
+3.2 Database Schema (Supabase PostgreSQL)
+Table
+Key Columns
+Purpose
+users
+id, email, name, streak_count, momentum_score, created_at
+User accounts and stats
+ideas
+id, user_id, title, description, category, status (active/dormant/archived), created_at
+Core idea records
+research_results
+id, idea_id, summary, steps_json, stack_json, resources_json, status (pending/complete)
+Agent research output
+tasks
+id, idea_id, user_id, title, description, scheduled_date, duration_mins, status, calendar_event_id
+Atomic scheduled tasks
+calendar_integrations
+id, user_id, provider (google/microsoft/apple), access_token, refresh_token, expires_at
+OAuth tokens per calendar
+user_preferences
+id, user_id, working_days (array), preferred_start_time, preferred_end_time, max_session_mins
+Scheduling preferences
+agent_jobs
+id, idea_id, type (research/schedule/enhance/dig), status, started_at, completed_at, error
+Agent job tracking
+streaks
+id, user_id, date, tasks_completed, updated_at
+Daily completion log for heatmap
+
+3.3 Agent Design
+Agent
+Trigger
+LLM Used
+Avg Runtime
+Notification?
+Research Agent
+Automatic on idea submit
+Gemini 1.5 Flash
+15–40 seconds
+Yes — when complete
+Scheduler Agent
+User taps "Schedule It"
+Gemini 1.5 Flash
+10–25 seconds
+Yes — summary of schedule
+Enhancement Agent
+Auto at 40% tasks complete
+Gemini 1.5 Flash
+20–45 seconds
+Yes — "Enhancements ready"
+Dig-Deeper Agent
+User taps "Tell me more"
+Claude Haiku (streaming)
+Streams in real-time
+No — streamed directly
+Rescue Agent
+Cron job: runs daily at 6 PM
+Gemini Flash (lightweight)
+5 seconds
+Yes — if user inactive 48h
+
+
+4. UX Design Guidelines
+4.1 Core Design Principles
+	•	Dark theme by default — target users work late nights on ideas
+	•	Each idea gets a unique color accent so the app feels personal, not generic
+	•	The app should feel like a thinking partner, not a task manager
+	•	Status of agents must be visible at all times — "Spark is researching your idea..." with a live indicator
+	•	Every screen accessible in 2 taps maximum from the home screen
+4.2 Screen Map (All Screens to Design)
+Screen Name
+Function
+Priority
+Onboarding (3 slides)
+Value prop + sign up + first idea capture prompt
+P0 — Ship Day 1
+Home / Idea Inbox
+Card list of all ideas with status indicators
+P0 — Ship Day 1
+New Idea Sheet
+Bottom sheet: text + voice input, category selector
+P0 — Ship Day 1
+Idea Detail
+Full research output with collapsible sections
+P0 — Ship Day 1
+Schedule Setup Sheet
+Preference collection before scheduling
+P0 — Ship Day 1
+Calendar Permissions
+OAuth consent flow and calendar picker
+P0 — Ship Day 1
+Active Project View
+Task list + completion % + next session info
+P0 — Ship Day 1
+Streak Dashboard
+Heatmap + streak count + momentum score
+P1 — Week 3
+Settings
+Calendar integrations, preferences, account
+P1 — Week 3
+Dig-Deeper Chat
+Streaming chat thread for follow-up research
+P1 — Week 5
+Enhancement Cards
+Cards showing AI-generated project enhancements
+P2 — Month 2
+PRD Export Screen
+Vibe Code Ready export and share options
+P2 — Month 2
+Subscription / Pro Screen
+Upgrade prompt and feature comparison
+P2 — Month 3
+
+4.3 Key Interaction Details
+Idea Card Design (Home Screen)
+	•	Card shows: idea title, category badge, status chip (Researching / Ready / Scheduled / In Progress / Dormant)
+	•	Active agent: card has a pulsing glow border in the idea's accent color
+	•	Swipe left on card: archive / delete options
+	•	Swipe right: quick-mark top task as Done
+Research Output Design (Idea Detail Screen)
+	•	Research text streams in with a typewriter animation when first loaded
+	•	Sections are collapsible accordions: Summary, Steps, Tech Stack, Resources, Mistakes to Avoid
+	•	Each bullet in Steps section is tappable → opens Dig-Deeper agent inline
+	•	Sticky bottom bar: "Schedule It" button + estimated total time badge
+Push Notification Design
+	•	Rich notification with app icon and idea title in header
+	•	Body: single clear sentence about what's ready or what's due
+	•	Action buttons: 2 max per notification (e.g., "View" + "Reschedule" OR "Done" + "Skip")
+	•	Tapping notification body: deep links directly into the relevant screen in app
+
+
+5. Development Roadmap
+Month 1 — Foundation (Weeks 1–4)
+▸ Goal: Working app that captures ideas and returns research. Internal alpha with 5 friends.
+
+Week
+Tasks
+Week 1
+Project setup: Expo + React Native + Supabase init. Auth screens (email magic link + Google OAuth). Basic DB schema. Figma designs for home + idea detail screens.
+Week 2
+Home screen (idea card list). New Idea bottom sheet (text + voice). WatermelonDB local storage. Idea syncs to Supabase. Cloudflare Worker: POST /ideas endpoint.
+Week 3
+Inngest setup. Research Agent v1: Tavily search + OpenRouter LLM call. Structured JSON output saved to Supabase. Push notification on completion via Expo.
+Week 4
+Idea Detail screen renders research output with accordion sections. Streaming text animation. Internal alpha: 5 users. Bug fixes + performance pass. Figma for scheduling screens.
+
+Month 2 — Calendar + Scheduling (Weeks 5–8)
+▸ Goal: Full scheduling loop working end-to-end. Closed beta with 50 users.
+
+Week
+Tasks
+Week 5
+Google Calendar OAuth 2.0 flow. Read free/busy slots via Calendar API. User preference collection screen (working days + times). Scheduler Agent v1: task atomization logic.
+Week 6
+Scheduler Agent v2: calendar write-back (create events via API). Task list screen in app. Task completion flow (mark done, progress %). Reschedule via notification actions.
+Week 7
+Microsoft Calendar / Outlook integration (same pattern as Google). Streak tracker: daily completion logging. Heatmap component. Streak count + Momentum Score calculation.
+Week 8
+Rescue notification Cron agent. Active Project screen with progress rings. Performance testing with 50 beta users. Bug triage. Figma for Phase 2 screens.
+
+Month 3 — Polish, Launch & Monetise (Weeks 9–12)
+▸ Goal: App Store + Play Store live. First paying users.
+
+Week
+Tasks
+Week 9
+Dig-Deeper Agent with streaming (SSE). Enhancement Agent (40% trigger). Idea Aging + Dormant system. Onboarding flow (3-slide intro + first idea prompt). Settings screen.
+Week 10
+App Store assets: icon, screenshots, preview video, description. Privacy Policy + Terms of Service. Apple Sign-In (required by App Store). Account deletion flow. Legal review.
+Week 11
+Submit to App Store (review takes 1–3 days). Submit to Play Store (review takes 1–3 days). Fix any rejection issues. RevenueCat integration for Pro subscription (₹199/mo).
+Week 12
+ProductHunt launch. LinkedIn/Twitter/Reddit GTM posts. Monitor analytics (PostHog). Sentry error monitoring. Customer support flow setup. First iteration based on user feedback.
+
+Month 4 — Growth (Weeks 13–16)
+▸ Goal: 1,000 MAU. ₹20,000+ MRR. Feature velocity increases.
+Week
+Tasks
+Week 13
+Notion integration. Vibe Code Ready PRD export. Apple Calendar (CalDAV). Idea Collision feature.
+Week 14
+Google Tasks + Microsoft To Do sync. Referral mechanic on archived ideas. Paid marketing begins.
+Week 15
+Analytics review: funnel drop-offs, churn points. Feature iteration based on real user data.
+Week 16
+Version 1.1 release. Scale planning (if free tiers are being hit). Investor/accelerator applications.
+
+
+6. App Store Requirements Checklist
+6.1 Apple App Store (iOS)
+	•	Apple Developer Account: $99/year (~₹8,300) — this is the ONLY required paid item
+	•	Apple Sign-In: mandatory if any other social login is offered
+	•	Account Deletion: users must be able to delete their account in-app (App Store requirement since 2022)
+	•	Privacy Policy URL: must be publicly accessible (host on Notion or GitHub Pages — free)
+	•	App Privacy "Nutrition Label": declare data collected (email, usage data) in App Store Connect
+	•	Age Rating: complete the age rating questionnaire — SPARK will be 4+ (no objectionable content)
+	•	Screenshots: 6.7" (iPhone 15 Pro Max), 12.9" (iPad Pro) — minimum required sizes
+	•	App Preview Video: optional but increases conversion by ~25%
+	•	Push Notification entitlement: enabled in Expo EAS Build config
+6.2 Google Play Store (Android)
+	•	Google Play Developer Account: $25 one-time (~₹2,000)
+	•	Target API Level: Android 14 (API 34) — required for new apps in 2024
+	•	Privacy Policy: same URL as iOS, linked in Play Console
+	•	Data Safety section: declare what data is collected and why (similar to Apple Nutrition Label)
+	•	App signing: handled by Google Play App Signing (enable in Play Console)
+	•	Content Rating: complete IARC questionnaire — will rate Everyone
+	•	Screenshots: phone (1080x1920px min), 7-inch tablet, 10-inch tablet
+	•	Feature Graphic: 1024x500px banner shown on Play Store listing
+6.3 Total One-Time Cost to Launch
+Item
+Cost
+Notes
+Apple Developer Account
+₹8,300/year
+Required — no way around it
+Google Play Developer Account
+₹2,000 one-time
+Required — no way around it
+Domain name (optional)
+₹800/year
+For privacy policy URL — or use Notion free
+Everything else
+₹0
+All services on free tiers
+TOTAL MINIMUM
+₹10,300
+To be in both stores (Apple account dominates)
+
+▸ Important: Apple Account is the Real Cost
+The ₹8,300 Apple Developer Account is the one non-negotiable cost. If budget is truly ₹0,
+consider launching Android-only first via Play Store (₹2,000 one-time) and raising the ₹8,300
+from first Android revenue or from the Apple Developer Program's free membership for students
+(Apple offers free membership via certain university programs — check your institution).
+
+
+7. Monetisation Strategy
+7.1 Freemium Model
+Feature
+Free Tier
+Pro Tier (₹199/mo)
+Ideas per month
+3
+Unlimited
+Research Agent
+Yes
+Yes (priority queue)
+Calendar integrations
+Google Calendar only
+All integrations
+Scheduler Agent
+Yes
+Yes
+Dig-Deeper Agent
+5 queries/month
+Unlimited
+Enhancement Agent
+No
+Yes
+Notion / Tasks sync
+No
+Yes
+PRD / Vibe Code Export
+No
+Yes
+Streak + Heatmap
+Yes (30-day history)
+Full history
+Idea history
+Last 10 ideas
+Unlimited archive
+
+7.2 Revenue Milestones
+Milestone
+MAU
+Pro Conversion
+MRR
+Timeline Target
+Break-even (AI costs)
+1,000
+2% = 20 users
+₹3,980
+Month 4
+Profitable
+3,000
+3% = 90 users
+₹17,910
+Month 6
+Growth stage
+10,000
+5% = 500 users
+₹99,500
+Month 9
+Scale
+100,000
+4% = 4,000 users
+₹7,96,000/mo
+Year 2
+
+8. Risks & Mitigations
+Risk
+Probability
+Impact
+Mitigation
+Tavily free tier runs out at 1,000 searches/month
+High by Month 2
+Medium
+Rate-limit free users. Cache research results — same topic queried twice reuses cached output.
+Apple rejects app for push notification misuse
+Low
+High
+Follow Apple HIG for notifications exactly. Provide easy opt-out in Settings. Don't send more than 2 notifications/day.
+Calendar OAuth tokens expire, break scheduling
+Medium
+High
+Store refresh tokens securely in Supabase. Auto-refresh before every Scheduler Agent run. Handle 401 errors gracefully with re-auth prompt.
+Agent runs take too long (user frustrated)
+Medium
+Medium
+Show a live "Researching..." indicator in-app via Supabase Realtime. Set 90-second timeout with graceful partial result fallback.
+Competitor ships similar app
+Medium
+Medium
+First-mover advantage + network effects from streak sharing. Focus on Indian market depth before going global.
+LLM costs spike unexpectedly
+Low
+Medium
+Set hard spending limits in OpenRouter dashboard. Gate expensive agents (Enhancement, Dig-Deeper) behind Pro tier.
+
+
+9. Go-to-Market Strategy (₹0 Budget)
+9.1 Pre-Launch (Month 1–2)
+	•	Build in public on Twitter/X and LinkedIn — post weekly updates: "Building SPARK, day 14: the research agent just worked for the first time"
+	•	Create a waitlist landing page on Notion (free) or Carrd (free) — collect emails before launch
+	•	Post in relevant communities: r/IndiaStartups, r/Entrepreneur, r/reactnative, IndiaHacks Discord
+	•	Share the idea with 10 people in your college — get 5 to commit to being beta users
+	•	Document the build journey as a thread series — "Building a ₹0 AI app" performs very well on LinkedIn in India
+9.2 Launch (Month 3)
+	•	ProductHunt launch: prepare assets 2 weeks early. Launch on a Tuesday–Thursday for best visibility
+	•	Post on r/Apple, r/Android, r/productivity, r/nocode, r/vibe_coding on launch day
+	•	Direct DM 20 tech YouTubers/creators in India (size: 10k–100k subscribers) — offer free Pro access for an honest review
+	•	Post in college WhatsApp/Telegram groups — "I built an app to help you actually execute your ideas"
+	•	Email the waitlist collected in pre-launch phase
+9.3 Growth (Month 4+)
+	•	Referral mechanic: "Share your dormant idea with a friend — they get 1 free research run"
+	•	Build streak sharing — "I've been building for 14 days straight with SPARK 🔥" as a share card
+	•	Apply to startup accelerators: NASSCOM, T-Hub, IIT incubators — free mentorship + credibility
+	•	Cold email 10 college entrepreneurship cells to use SPARK in their idea competitions
+
+10. Council Sign-Off & First Action Items
+10.1 The Council's 3 Non-Negotiables
+▸ Agent A (Developer):
+Do NOT build a custom backend server. Supabase + Cloudflare Workers + Inngest handles everything. A custom Node.js server will drain your time and cost money. Stay serverless until 500k+ users.
+
+▸ Agent C (Architect):
+Do NOT use LangChain or complex agent frameworks. Write your 4 agents as simple async functions that call APIs directly. You can always add complexity later — you cannot remove it.
+
+▸ Agent D (TPM):
+Ship an imperfect v1 by end of Month 1 to 5 real users. Real user feedback is worth 100x any planning document. The plan changes the moment it meets users — and that's good.
+
+10.2 Your First 5 Actions — Start Today
+#
+Action
+Time Required
+Outcome
+1
+Create a new Expo project: npx create-expo-app@latest spark
+30 minutes
+Working mobile app shell on your phone
+2
+Create Supabase project at supabase.com — free account, set up the users and ideas tables
+45 minutes
+Database live, auth ready
+3
+Create Inngest account at inngest.com — free, write your first "hello world" background function
+1 hour
+Agent infrastructure proven
+4
+Get Tavily API key at tavily.com and OpenRouter key at openrouter.ai — test one research query in Postman
+1 hour
+AI research pipeline proven
+5
+Open Figma — draw the Home screen and New Idea sheet as wireframes. Just boxes and text.
+2 hours
+Visual target to build toward
+
+
+⚡  SPARK — From Spark to Ship
+The idea graveyard ends here.
